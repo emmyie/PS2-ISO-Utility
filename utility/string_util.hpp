@@ -32,12 +32,12 @@ namespace str_util
 	inline std::string sanitize_title( std::string_view title )
 	{
 		std::string result;
-		result.reserve( std::min<size_t>( 31, title.size( ) ) );
+		result.reserve( std::min<size_t>( 32, title.size( ) ) );
 
 		for ( char c : title )
 		{
 			if ( c == '\n' || c == '\r' ) continue;
-			if ( result.size( ) == 31 ) break;
+			if ( result.size( ) == 32 ) break;
 			result.push_back( static_cast< unsigned char >( c ) < 128 ? c : '?' );
 		}
 

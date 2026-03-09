@@ -62,14 +62,36 @@ public:
 		const string system_cnf = iso_util::read_system_cnf( iso_path );
 		string boot_id = iso_util::extract_boot_id( system_cnf );
 
-		string title = opt.m_title.empty( ) ? boot_id : str_util::sanitize_title( opt.m_title );
-		if ( title.size( ) > 31 )
-			title.resize( 31 );
+		string title;
+		if ( !opt.m_title.empty( ) )
+		{
+			title = str_util::sanitize_title( opt.m_title );
+		}
+		else
+		{
+			try
+			{
+				title = str_util::sanitize_title( fs::path( iso_path ).stem( ).string( ) );
+			}
+			catch ( ... )
+			{
+				title = {};
+			}
+			if ( title.empty( ) )
+			{
+				title = boot_id;
+			}
+		}
+
+		if ( title.size( ) > 32 )
+		{
+			title.resize( 32 );
+		}
 
 		auto crc_opt = crc::crc32_hash( title );
 		if ( !crc_opt )
 		{
-			throw runtime_error( "Title exceeds 31 chars after sanitize; cannot compute OPL CRC" );
+			throw runtime_error( "Title exceeds 32 chars after sanitize; cannot compute OPL CRC" );
 		}
 
 		uint32_t crc_val = *crc_opt;
@@ -127,7 +149,10 @@ public:
 			std::snprintf( suffix, sizeof( suffix ), "%02u", static_cast< unsigned >( idx ) );
 			fs::path part_path = out_dir / ( base + suffix );
 			ofstream out( part_path, ios::binary );
-			if ( !out ) throw runtime_error( "Cannot create part file: " + part_path.string( ) );
+			if ( !out )
+			{
+				throw runtime_error( "Cannot create part file: " + part_path.string( ) );
+			}
 
 			uint64_t bytes_in_this_part = 0;
 			while ( bytes_in_this_part < part_size && processed < iso_size )
@@ -139,15 +164,24 @@ public:
 
 				in.read( buffer.data( ), static_cast< std::streamsize >( to_read ) );
 				const std::streamsize got = in.gcount( );
-				if ( got <= 0 ) break;
+				if ( got <= 0 )
+				{
+					break;
+				}
 
 				out.write( buffer.data( ), got );
-				if ( !out.good( ) ) throw runtime_error( "Write error: " + part_path.string( ) );
+				if ( !out.good( ) )
+				{
+					throw runtime_error( "Write error: " + part_path.string( ) );
+				}
 
 				processed += static_cast< uint64_t >( got );
 				bytes_in_this_part += static_cast< uint64_t >( got );
 
-				if ( opt.m_on_progress_fn ) opt.m_on_progress_fn( processed, iso_size );
+				if ( opt.m_on_progress_fn )
+				{
+					opt.m_on_progress_fn( processed, iso_size );
+				}
 			}
 
 			out.close( );
@@ -157,7 +191,11 @@ public:
 		if ( opt.m_verify_sizes )
 		{
 			uint64_t sum = 0;
-			for ( const auto& p : result.m_written_files ) sum += std::filesystem::file_size( p );
+			for ( const auto& p : result.m_written_files )
+			{
+				sum += std::filesystem::file_size( p );
+			}
+
 			if ( sum != iso_size )
 			{
 				throw runtime_error( "Split size mismatch: sum(parts) != ISO size" );
