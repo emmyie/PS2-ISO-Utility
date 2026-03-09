@@ -70,7 +70,7 @@ struct ul_cfg_record
 	[[nodiscard]]
 	std::string get_boot_id( ) const
 	{
-		std::string result( reinterpret_cast< const char* >( m_raw.data( ) + 0x20 ), 12 );
+		std::string result( reinterpret_cast< const char* >( m_raw.data( ) + 0x20 ), 16 );
 		auto pos = result.find_last_not_of( " \t" );
 		if ( pos == std::string::npos ) return std::string( );
 		result.erase( pos + 1 );
