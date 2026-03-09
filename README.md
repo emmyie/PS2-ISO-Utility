@@ -204,3 +204,28 @@ Replace `x64` / `Release` with your desired platform and configuration as needed
 ## License
 
 This project is released into the public domain under the [Unlicense](LICENSE).
+
+---
+
+## OPL Compatibility & Testing Notes
+
+- The ISO parsing logic is implemented to match behavior used by OpenPS2Loader's `iso2opl`/`isofs` tools:
+  - Primary Volume Descriptor is read from sector 16 and validated (`CD001` signature and PVD version 1).
+  - Root directory entries are scanned for `SYSTEM.CNF`. Both ASCII and Joliet (UCS-2 BE) filename encodings are supported. Joliet names are detected by interpreting the high-byte/low-byte UCS-2 layout and extracting the low bytes, mirroring common libcdvd/OPL heuristics.
+  - `SYSTEM.CNF` is parsed for `BOOT` / `BOOT2` lines and for occurrences of the `CDROM0:\` path; the final filename component is returned and sanitized for use in `ul.*` filenames.
+
+- Tests:
+  - A set of unit tests was added at `tests/test_iso_util.cpp` that build minimal synthetic ISO files (PVD, root directory sector, and SYSTEM.CNF file contents) and exercise:
+    - Normal ASCII `SYSTEM.CNF` and `BOOT`/`BOOT2` parsing
+    - Missing `SYSTEM.CNF` detection (throws)
+    - Joliet (UCS-2 BE) filename handling
+    - Truncated directory records (safely skipped)
+    - Oversized `file identifier length` values being capped to avoid OOB reads
+
+- Running tests:
+  - From the repository root (with a C++17 compiler):
+
+```bash
+g++ -std=c++17 -I. tests/test_iso_util.cpp -o tests/test_iso_util
+./tests/test_iso_util
+```
