@@ -18,8 +18,7 @@ struct ul_cfg_record
 		const std::string& title,
 		const std::string& boot_id,
 		uint8_t chunk_count,
-		bool is_dvd,
-		uint32_t size_mb )
+		bool is_dvd )
 	{
 		ul_cfg_record record{};
 		record.m_raw.fill( 0x20 ); // default fill with spaces
@@ -30,31 +29,25 @@ struct ul_cfg_record
 			record.m_raw[ i ] = static_cast< uint8_t >( title[ i ] );
 		}
 
-		// "ul.<bootid>" marker at 0x20 (16 bytes total)
+		// "ul.<bootid>" marker at 0x20 (15 bytes total)
 		const std::string mark = "ul." + boot_id;
-		if ( mark.size( ) > 16 )
+		if ( mark.size( ) > 15 )
 		{
-			throw std::runtime_error( "boot_id too long: 'ul." + boot_id + "' exceeds 16 bytes" );
+			throw std::runtime_error( "boot_id too long: 'ul." + boot_id + "' exceeds 15 bytes" );
 		}
-		for ( size_t i = 0; i < mark.size( ) && ( 0x20 + i ) < 0x30; ++i )
+		for ( size_t i = 0; i < mark.size( ) && ( 0x20 + i ) < 0x2F; ++i )
 		{
 			record.m_raw[ 0x20 + i ] = static_cast< uint8_t >( mark[ i ] );
 		}
 
-		// Chunk count @ 0x30
-		record.m_raw[ 0x30 ] = chunk_count;
+		// Chunk count @ 0x2F
+		record.m_raw[ 0x2F ] = chunk_count;
 
-		// Media type @ 0x31
-		record.m_raw[ 0x31 ] = is_dvd ? 0x14 : 0x12;
+		// Media type @ 0x30: 0x14 for DVD, 0x12 for CD
+		record.m_raw[ 0x30 ] = is_dvd ? 0x14 : 0x12;
 
-		// Always 0x08 @ 0x36
+		// Always 0x08 (Magic value) @ 0x36
 		record.m_raw[ 0x36 ] = 0x08;
-
-		// Game size in MB @ 0x39–0x3C (LE)
-		record.m_raw[ 0x39 ] = ( uint8_t )( size_mb & 0xFF );
-		record.m_raw[ 0x3A ] = ( uint8_t )( ( size_mb >> 8 ) & 0xFF );
-		record.m_raw[ 0x3B ] = ( uint8_t )( ( size_mb >> 16 ) & 0xFF );
-		record.m_raw[ 0x3C ] = ( uint8_t )( ( size_mb >> 24 ) & 0xFF );
 
 		return record;
 	}

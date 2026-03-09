@@ -205,13 +205,13 @@ public:
 		{
 			ul_cfg_manager cfg{ out_dir };
 
-			uint64_t size_mb = iso_size / ( 1024 * 1024 );
+			const uint64_t size_mb = iso_size / ( 1024 * 1024 );
 			if ( size_mb > 0xFFFFFFFFULL )
 			{
 				throw runtime_error( "ISO too large: size exceeds uint32_t limit" );
 			}
 
-			const auto rec = ul_cfg_record::make( title, boot_id, parts, is_dvd, static_cast< uint32_t >( size_mb ) );
+			const auto rec = ul_cfg_record::make( title, boot_id, parts, is_dvd );
 			cfg.append( rec );
 		}
 
