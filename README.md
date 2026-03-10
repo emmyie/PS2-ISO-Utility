@@ -29,7 +29,7 @@ A Windows desktop application that splits PlayStation 2 ISO files into 1 GB chun
 - Parses the ISO9660 file system to extract the boot executable ID (e.g., `SLUS12345`) without any external tools.
 - Automatically detects whether the disc is CD (~700 MB) or DVD based on file size, or lets you override it.
 - Generates OPL-compatible CRC32 hashes used in part-file naming.
-- Writes a 64-byte `ul.cfg` record with title, boot ID, part count, media type, and size.
+- Writes a 64-byte `ul.cfg` record with title, boot ID, part count, and media type.
 - Verifies that the sum of all written part files equals the original ISO size.
 - Runs the split in a detached background thread so the UI stays responsive with a real-time progress bar.
 - Custom pastel-themed ImGui UI with an integrated file browser filtered to `.iso` files.
@@ -50,7 +50,7 @@ When you click **Split ISO**, the tool opens the `.iso` as a binary stream and n
 
 ### 2. Pre-split Calculations
 
-- The user-supplied title (or the boot ID if left blank) is sanitised to at most 31 ASCII characters — OPL's hard limit.
+- The user-supplied title (or the boot ID if left blank) is sanitised to at most 32 ASCII characters.
 - A CRC32 hash of the sanitised title is computed using the OPL-compatible polynomial (`0x04C11DB7`) and formatted as an 8-character uppercase hex string (e.g., `A1B2C3D4`).
 - Media type is decided: ISOs larger than 700 MB are treated as DVD (`0x14`), smaller ones as CD (`0x12`).
 - The number of 1 GB parts is calculated; the tool throws an error if more than 255 would be needed.
@@ -73,11 +73,10 @@ A 64-byte binary record is appended to `ul.cfg` in the output directory:
 | Offset | Size | Content |
 |--------|------|---------|
 | `0x00` | 32 B | Game title, space-padded |
-| `0x20` | 16 B | `ul.<BOOT_ID>`, space-padded |
-| `0x30` | 1 B  | Number of parts |
-| `0x31` | 1 B  | Media type (`0x14` = DVD, `0x12` = CD) |
+| `0x20` | 15 B | `ul.<BOOT_ID>`, space-padded |
+| `0x2F` | 1 B  | Number of parts |
+| `0x30` | 1 B  | Media type (`0x14` = DVD, `0x12` = CD) |
 | `0x36` | 1 B  | Always `0x08` |
-| `0x39` | 4 B  | ISO size in MB (little-endian `uint32_t`) |
 
 ---
 
